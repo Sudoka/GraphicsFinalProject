@@ -237,8 +237,6 @@ void navigateCamera()
 {
     Vector3 eye = camera->getEye();
     Vector3 up = camera->getUp();
-    //eye.print();
-    //up.print();
     Vector3 lookat = camera->getLookat();
     Vector3 forward = lookat.subtract(eye);
     Vector3 right = forward.cross(up);
@@ -802,6 +800,7 @@ void window::displayCallback(void)
 
   navigateCamera();
   cube.getMatrix().set(camera->C);
+  cube.getMatrix().invert();
   cube.getMatrix().set(cube.getMatrix().multiply(cube2.getMatrix()));
   cube.getMatrix().set(cube.getMatrix().multiply(cube1.getMatrix()));
   glLoadMatrixd(cube.getMatrix().getGLPointer());
@@ -809,7 +808,8 @@ void window::displayCallback(void)
   glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
   glMaterialfv(GL_FRONT, GL_SHININESS, shininess);
   
-  drawFlag();
+  drawCube(5.0);
+  //drawFlag();
   
   //display frame rate
   ++frameCount;
@@ -994,7 +994,6 @@ void processSpecialKeys(int key, int x, int y)
     {
         case GLUT_KEY_UP:
             isForward = true;
-            cout << isForward << endl;
             break;
         case GLUT_KEY_DOWN:
             isBackward = true;
@@ -1156,7 +1155,7 @@ void loadRobot()
     rightLowLegMT->addChild(rightLowLeg);
 
     //camera->getCameraMatrix().print();
-    camera->C.invert();
+    //camera->C.invert();
     cameraMT->curMatrix = camera->C;
     //camera->getCameraMatrix().print();
     //camera->getCameraMatrix().invert();
@@ -1316,12 +1315,12 @@ int main(int argc, char *argv[])
   char frag[] = "shaders/light1_2_shading.frag";
   shader = new Shader(vert, frag, true);
 
-  loadTexture();
+  //loadTexture();
 
   //camera = new Camera(new Vector3(0,10,10), new Vector3(0,0,0), new Vector3(0,1,0));
   //camera = new Camera(new Vector3(-15,5,10), new Vector3(-5,0,0), new Vector3(0,1,0.5));
 
-  loadRobot();
+  //loadRobot();
  
   glutMainLoop();
   return 0;
