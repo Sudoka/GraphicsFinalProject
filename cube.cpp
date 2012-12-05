@@ -157,6 +157,7 @@ Matrix4 G1z = Matrix4(patch10.get(2,0), patch10.get(2,1), patch10.get(2,2), patc
                       patch13.get(2,0), patch13.get(2,1), patch13.get(2,2), patch13.get(2,3));
 float INTERVAL = 0.02;
 float flagAngle = 0.0, flagInterval = 0.1;
+bool isFullscreen = false;
 
 //----------------------------------------------------------------------------
 // Callback method called when system is idle.
@@ -177,7 +178,13 @@ void window::reshapeCallback(int w, int h)
   //gluPerspective(fov, ratio, zNear, zFar);
   //glTranslated(0.0,0.0,-100);
   //glFrustum(fleft, fright, fbottom, ftop, fzNear, fzFar); // set perspective projection viewing frustum
-  glFrustum(-10, 10, -10, 10, 10, 1000); // set perspective projection viewing frustum
+
+  float height_ar = 1.0;
+  float width_ar = 1.0;
+
+  w < h ? width_ar = w/(float)h : height_ar = h/(float)w;
+
+  glFrustum(-10 * width_ar, 10 * width_ar, -10 * height_ar, 10 * height_ar, 10, 1000); // set perspective projection viewing frustum
   glTranslatef(0, 0, -10);
   //glMatrixMode(GL_MODELVIEW);
 }
@@ -230,6 +237,8 @@ void navigateCamera()
 {
     Vector3 eye = camera->getEye();
     Vector3 up = camera->getUp();
+    //eye.print();
+    //up.print();
     Vector3 lookat = camera->getLookat();
     Vector3 forward = lookat.subtract(eye);
     Vector3 right = forward.cross(up);
@@ -263,13 +272,13 @@ void navigateCamera()
                      0,0,1,-right.get(2),
                      0,0,0,1);
     if (isForward)
-        camera->getCameraMatrix().set(camera->getCameraMatrix().multiply(forwardM));
+        camera->C.set(camera->C.multiply(forwardM));
     else if (isBackward) 
-        camera->getCameraMatrix().set(camera->getCameraMatrix().multiply(backwardM));
+        camera->C.set(camera->C.multiply(backwardM));
     if (isRight) 
-        camera->getCameraMatrix().set(camera->getCameraMatrix().multiply(rightM));
+        camera->C.set(camera->C.multiply(rightM));
     else if (isLeft)
-        camera->getCameraMatrix().set(camera->getCameraMatrix().multiply(leftM));
+        camera->C.set(camera->C.multiply(leftM));
 }
 
 void drawCube(float size)
@@ -708,32 +717,24 @@ void animateFlag()
     // z axis
     G0z.m[0][1] = patch00.get(2,1) - angletoadd * 2 ;
     G0z.m[0][2] = patch00.get(2,2) + angletoadd * 2;
-    //G0z.m[0][3] = patch00.get(2,3) + angletoadd;
-    //G1z.m[0][0] = patch10.get(2,0) + angletoadd;
     G1z.m[0][1] = patch10.get(2,1) - angletoadd * 2;
     G1z.m[0][2] = patch10.get(2,2) + angletoadd * 2;
     G1z.m[0][3] = patch10.get(2,3) - angletoadd * 2;
 
     G0z.m[1][1] = patch01.get(2,1) - angletoadd * 2;
     G0z.m[1][2] = patch01.get(2,2) + angletoadd * 2;
-    //G0z.m[1][3] = patch01.get(2,3) + angletoadd;
-    //G1z.m[1][0] = patch11.get(2,0) + angletoadd;
     G1z.m[1][1] = patch11.get(2,1) - angletoadd * 2;
     G1z.m[1][2] = patch11.get(2,2) + angletoadd * 2;
     G1z.m[1][3] = patch11.get(2,3) - angletoadd * 2;
 
     G0z.m[2][1] = patch02.get(2,1) - angletoadd * 2;
     G0z.m[2][2] = patch02.get(2,2) + angletoadd * 2;
-    //G0z.m[2][3] = patch02.get(2,3) + angletoadd;
-    //G1z.m[2][0] = patch12.get(2,0) + angletoadd;
     G1z.m[2][1] = patch12.get(2,1) - angletoadd * 2;
     G1z.m[2][2] = patch12.get(2,2) + angletoadd * 2;
     G1z.m[2][3] = patch12.get(2,3) - angletoadd * 2;
 
     G0z.m[3][1] = patch03.get(2,1) - angletoadd * 2;
     G0z.m[3][2] = patch03.get(2,2) + angletoadd * 2;
-    //G0z.m[3][3] = patch03.get(2,3) + angletoadd;
-    //G1z.m[3][0] = patch13.get(2,0) + angletoadd;
     G1z.m[3][1] = patch13.get(2,1) - angletoadd * 2;
     G1z.m[3][2] = patch13.get(2,2) + angletoadd * 2;
     G1z.m[3][3] = patch13.get(2,3) - angletoadd * 2;
@@ -799,6 +800,7 @@ void window::displayCallback(void)
   glMatrixMode(GL_MODELVIEW);
   cube.getMatrix().identity();
 
+  navigateCamera();
   cube.getMatrix().set(camera->C);
   cube.getMatrix().set(cube.getMatrix().multiply(cube2.getMatrix()));
   cube.getMatrix().set(cube.getMatrix().multiply(cube1.getMatrix()));
@@ -959,6 +961,13 @@ void processNormalKeys(unsigned char key, int x, int y)
             if (isTexture) glEnable(GL_TEXTURE_2D);
             else glDisable(GL_TEXTURE_2D);
             break;
+        case 'f':
+            isFullscreen = !isFullscreen;
+            if (isFullscreen)
+                glutFullScreen();
+            else
+                glutReshapeWindow(512, 512);
+            break;
         case 27:
             delete camera;
             delete shader;
@@ -985,6 +994,7 @@ void processSpecialKeys(int key, int x, int y)
     {
         case GLUT_KEY_UP:
             isForward = true;
+            cout << isForward << endl;
             break;
         case GLUT_KEY_DOWN:
             isBackward = true;
@@ -1224,7 +1234,10 @@ int main(int argc, char *argv[])
   glutInit(&argc, argv);      	      	      // initialize GLUT
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);   // open an OpenGL context with double buffering, RGB colors, and depth buffering
   glutInitWindowSize(window::width, window::height);      // set initial window size
-  glutCreateWindow("CSE 167 project 6");    	      // open window and set window title
+  //glutFullScreen();
+  glutCreateWindow("CSE 167 Final Project");    	      // open window and set window title
+  if (isFullscreen)
+    glutFullScreen();
   
   //glEnable(GL_TEXTURE_2D);
   glShadeModel(GL_SMOOTH);
@@ -1296,7 +1309,7 @@ int main(int argc, char *argv[])
   ltwo.getMatrix().identity();
 
   //camera = new Camera(Vector3(-2,8,55),Vector3(0,0,1),Vector3(0,1,0));
-  camera = new Camera(Vector3(0,0,25),Vector3(0,0,0),Vector3(0,1,0));
+  camera = new Camera(Vector3(0,2,25),Vector3(0,0,1),Vector3(0,1,0));
   //camera->resetCamera();
   
   char vert[] = "shaders/light1_2_shading.vert";
